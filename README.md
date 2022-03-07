@@ -1,18 +1,19 @@
-# terraform_aws_vpc
+# terraform-sshkey-aws
 - [x] Status:  Ainda em desenvolvimento.
 ###
-### Módulo para criar uma VPC na AWS composta dos recursos, Vpc, subnets (publicas e privadas), network Acls, route tables e internet gateway. Para utilizar este módulo é necessário os seguintes arquivos especificados logo abaixo:
+### Módulo para criar uma chave Key Pairs . 
+Para utilizar este módulo é necessário os seguintes arquivos especificados logo abaixo:
 
    <summary>versions.tf - Arquivo com as versões dos providers.</summary>
 
 ```hcl
 terraform {
-    required_version = "~> 0.15.4"
+    required_version = ">= 0.15.4"
 
     required_providers {
         aws = {
         source  = "hashicorp/aws"
-        version = "~> 3.0"
+        version = ">= 3.0"
         }
     }
  }
@@ -25,77 +26,26 @@ provider "aws" {
   region  = var.region
 }
 
-
-module "network" {
-  source          = "git::https://github.com/israeldoamaral/terraform-vpc-aws"
-  region          = var.region
-  cidr            = var.cidr
-  count_available = var.count_available
-  vpc             = module.network.vpc
-  tag_vpc         = var.tag_vpc
-  nacl            = var.nacl
-}
-```
-#
-<summary>variables.tf - Arquivo que contém as variáveis que o módulo irá utilizar e pode ter os valores alterados de acordo com a necessidade.</summary>
-
-```hcl
-variable "region" {
-  type        = string
-  description = "Região na AWS"
-  default     = "us-east-1"
-}
-
-variable "cidr" {
-  description = "CIDR da VPC"
-  type        = string
-  default     = "10.10.0.0/16"
-}
-
-variable "count_available" {
-  type        = number
-  description = "Numero de Zonas de disponibilidade"
-  default     = 2
-}
-
-variable "tag_vpc" {
-  description = "Tag Name da VPC"
-  type        = string
-  default     = "VPC-name"
-}
-
-
-variable "nacl" {
-  description = "Regras de Network Acls AWS"
-  type        = map(object({ protocol = string, action = string, cidr_blocks = string, from_port = number, to_port = number }))
-  default = {
-    100 = { protocol = "tcp", action = "allow", cidr_blocks = "0.0.0.0/0", from_port = 22, to_port = 22 }
-    105 = { protocol = "tcp", action = "allow", cidr_blocks = "0.0.0.0/0", from_port = 80, to_port = 80 }
-    110 = { protocol = "tcp", action = "allow", cidr_blocks = "0.0.0.0/0", from_port = 443, to_port = 443 }
-    150 = { protocol = "tcp", action = "allow", cidr_blocks = "0.0.0.0/0", from_port = 1024, to_port = 65535 }
-  }
+module "ssh-key" {
+  source    = "./.terraform/modules/ssh-key"
+  namespace = "Nome_da_chave"
 }
 
 ```
+
 #
 <summary>outputs.tf - Outputs de recursos que serão utilizados em outros módulos.</summary>
 
 ```hcl
-output "vpc" {
-  description = "Idendificador da VPC"
-  value       = module.network.vpc
+output "ssh_keypair" {
+  value = module.ssh-key.ssh_keypair
+  sensitive = true
 }
 
-output "public_subnet" {
-  description = "Subnet public "
-  value       = module.network.public_subnet
-}
 
-output "private_subnet" {
-  description = "Subnet private "
-  value       = module.network.private_subnet
+output "key_name" {
+  value = module.ssh-key.key_name
 }
-
 ```
 
 ## Requirements
@@ -113,7 +63,7 @@ No providers.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_network"></a> [network](#module\_network) | github.com/israeldoamaral/terraform-vpc-aws | n/a |
+| <a name="module_network"></a> [network](#module\_network) | github.com/israeldoamaral/terraform-sshkey-aws | n/a |
 
 ## Resources
 
@@ -123,11 +73,7 @@ No resources.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_cidr"></a> [cidr](#input\_cidr) | CIDR da VPC, exemplo "10.0.0.0/16" | `string` | `" "` | no |
-| <a name="input_count_available"></a> [count\_available](#input\_count\_available) | Numero de Zonas de disponibilidade | `number` | `2` | no |
-| <a name="input_nacl"></a> [nacl](#input\_nacl) | Regras de Network Acls AWS | `map(object)` | n/a | yes |
-| <a name="input_region"></a> [region](#input\_region) | Região na AWS, exemplo "us-east-1" | `string` | `" "` | no |
-| <a name="input_tag_vpc"></a> [tag\_vpc](#input\_tag\_vpc) | Tag Name da VPC | `string` | `""` | no |
+| <a name="input_namespace"></a> [cidr](#input\_namespace) | Nome da chave de acesso Ex: "terraform" | `string` | `" "` | yes |
 
 ## Outputs
 
@@ -135,8 +81,7 @@ No outputs.
 #
 ## Como usar.
   - Para utilizar localmente crie os arquivos descritos no começo deste tutorial, main.tf, versions.tf, variables.tf e outputs.tf.
-  - Após criar os arquivos, atente-se aos valores default das variáveis, pois podem ser alterados de acordo com sua necessidade. 
-  - A variável `count_available` define o quantidade de zonas de disponibilidade, públicas e privadas que seram criadas nessa Vpc.
+  - Após criar os arquivos, atente-se ao valor default da variável "namespace", pois pode ser alterado de acordo com sua necessidade. 
   - Certifique-se que possua as credenciais da AWS - **`AWS_ACCESS_KEY_ID`** e **`AWS_SECRET_ACCESS_KEY`**.
 
 ### Comandos
