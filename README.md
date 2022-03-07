@@ -27,7 +27,7 @@ provider "aws" {
 }
 
 module "ssh-key" {
-  source    = "./.terraform/modules/ssh-key"
+  source    = "git::https://github.com/israeldoamaral/terraform-sshkey-aws"
   namespace = "Nome_da_chave"
 }
 
